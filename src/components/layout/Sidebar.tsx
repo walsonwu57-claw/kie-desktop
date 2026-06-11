@@ -1,0 +1,383 @@
+import { useState, useEffect, useRef, memo, type ReactNode } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Home,
+  PlayCircle,
+  FolderOpen,
+  History,
+  Settings,
+  PanelLeftClose,
+  PanelLeft,
+  FolderHeart,
+  Sparkles,
+  Layers,
+  X,
+} from "lucide-react";
+
+interface NavItem {
+  titleKey: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  matchPrefix?: boolean;
+}
+
+// Static nav data — defined outside component to avoid re-creation on every render
+const createItems: NavItem[] = [
+  { titleKey: "nav.home", href: "/", icon: Home },
+  { titleKey: "nav.models", href: "/models", icon: Layers },
+  {
+    titleKey: "nav.playground",
+    href: "/playground",
+    icon: PlayCircle,
+    matchPrefix: true,
+  },
+];
+
+const manageItems: NavItem[] = [
+  { titleKey: "nav.templates", href: "/templates", icon: FolderOpen },
+  { titleKey: "nav.history", href: "/history", icon: History },
+  { titleKey: "nav.assets", href: "/assets", icon: FolderHeart },
+];
+
+const toolsItems: NavItem[] = [
+  {
+    titleKey: "nav.freeTools",
+    href: "/free-tools",
+    icon: Sparkles,
+    matchPrefix: true,
+  },
+];
+
+const navGroups = [
+  { key: "create", label: "Create", items: createItems },
+  { key: "manage", label: "Manage", items: manageItems },
+  { key: "tools", label: "Tools", items: toolsItems },
+];
+
+const bottomNavItems: NavItem[] = [
+  { titleKey: "nav.settings", href: "/settings", icon: Settings },
+];
+
+interface SidebarProps {
+  collapsed: boolean;
+  onToggle: () => void;
+  lastFreeToolsPage: string | null;
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+function SidebarTooltip({
+  enabled,
+  children,
+}: {
+  enabled: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) setOpen(false);
+  }, [enabled]);
+
+  return (
+    <Tooltip
+      delayDuration={0}
+      open={enabled ? open : false}
+      onOpenChange={(nextOpen) => setOpen(enabled ? nextOpen : false)}
+    >
+      {children}
+    </Tooltip>
+  );
+}
+
+export const Sidebar = memo(function Sidebar({
+  collapsed,
+  onToggle,
+  lastFreeToolsPage,
+  isMobileOpen,
+  onMobileClose,
+}: SidebarProps) {
+  const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Suppress tooltips during collapse/expand animation to prevent stale popups
+  const [tooltipReady, setTooltipReady] = useState(true);
+  const prevCollapsed = useRef(collapsed);
+  useEffect(() => {
+    if (prevCollapsed.current !== collapsed) {
+      setTooltipReady(false);
+      const timer = setTimeout(() => setTooltipReady(true), 350);
+      prevCollapsed.current = collapsed;
+      return () => clearTimeout(timer);
+    }
+  }, [collapsed]);
+
+  // Dismiss stale tooltips after Alt+Tab: suppress on blur, re-enable on next mouse move
+  const blurredRef = useRef(false);
+  useEffect(() => {
+    const handleBlur = () => {
+      blurredRef.current = true;
+      setTooltipReady(false);
+    };
+    const handleFocus = () => {
+      if (!blurredRef.current) return;
+      // Keep suppressed — will be re-enabled by mousemove after a short grace period
+      // The delay prevents tooltips from flashing when the OS synthesizes a
+      // mousemove event immediately upon window focus (common in Electron).
+      const onMove = () => {
+        blurredRef.current = false;
+        setTooltipReady(true);
+        window.removeEventListener("mousemove", onMove);
+      };
+      setTimeout(() => {
+        window.addEventListener("mousemove", onMove, { once: true });
+      }, 150);
+    };
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
+
+  // Check if a nav item is active
+  const isActive = (item: NavItem) => {
+    if (item.matchPrefix) {
+      return (
+        location.pathname === item.href ||
+        location.pathname.startsWith(item.href + "/")
+      );
+    }
+    return location.pathname === item.href;
+  };
+
+  const navRef = useRef<HTMLElement>(null);
+  const [indicatorStyle, setIndicatorStyle] = useState<React.CSSProperties>({
+    opacity: 0,
+  });
+  const hasPositioned = useRef(false);
+
+  useEffect(() => {
+    const measure = () => {
+      const nav = navRef.current;
+      if (!nav) return;
+      const activeBtn = nav.querySelector(
+        "[data-nav-active]",
+      ) as HTMLElement | null;
+      if (!activeBtn) {
+        setIndicatorStyle((s) => ({ ...s, opacity: 0 }));
+        return;
+      }
+      const nr = nav.getBoundingClientRect();
+      const br = activeBtn.getBoundingClientRect();
+      setIndicatorStyle({
+        top: br.top - nr.top,
+        left: br.left - nr.left,
+        width: br.width,
+        height: br.height,
+        opacity: 1,
+      });
+      hasPositioned.current = true;
+    };
+
+    requestAnimationFrame(measure);
+    // Re-measure after sidebar collapse/expand transition completes
+    const timer = setTimeout(measure, 350);
+    window.addEventListener("resize", measure);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", measure);
+    };
+  }, [location.pathname, collapsed, isMobileOpen]);
+
+  return (
+    <div
+      className={cn(
+        "flex h-full flex-col bg-background/95 backdrop-blur transition-all duration-300 shrink-0 electron-drag",
+        collapsed ? "w-12" : "w-48",
+        // Mobile overlay when hamburger opens
+        isMobileOpen && "!fixed inset-y-0 left-0 z-50 w-72 shadow-2xl",
+      )}
+    >
+      {/* Mobile close button */}
+      {isMobileOpen && (
+        <button
+          className="absolute right-4 top-4 rounded-lg p-1.5 text-muted-foreground hover:bg-muted md:hidden"
+          onClick={onMobileClose}
+          aria-label="Close menu"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      )}
+
+      {/* Navigation */}
+      <ScrollArea className="flex-1 px-1.5 py-2">
+        <nav
+          ref={navRef}
+          className="relative flex flex-col gap-5 px-0.5 electron-no-drag"
+        >
+          {/* Sliding active indicator */}
+          <div
+            className={cn(
+              "absolute rounded-lg bg-primary shadow-sm pointer-events-none",
+              hasPositioned.current &&
+                "transition-[top,left,width,height,opacity] duration-300 ease-out",
+            )}
+            style={indicatorStyle}
+          />
+          {navGroups.map((group) => (
+            <div
+              key={group.key}
+              className={collapsed && !isMobileOpen ? "contents" : "space-y-5"}
+            >
+              {(!collapsed || isMobileOpen) && (
+                <div className="px-2 pb-0.5 pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                  {group.label}
+                </div>
+              )}
+
+              {group.items.map((item) => {
+                const active = isActive(item);
+                const showTooltip = collapsed && !isMobileOpen && tooltipReady;
+                return (
+                  <SidebarTooltip key={item.href} enabled={showTooltip}>
+                    <TooltipTrigger asChild>
+                      <button
+                        data-nav-active={active || undefined}
+                        onClick={() => {
+                          if (
+                            item.matchPrefix &&
+                            location.pathname.startsWith(item.href + "/")
+                          ) {
+                            return;
+                          }
+                          if (
+                            item.href === "/free-tools" &&
+                            lastFreeToolsPage
+                          ) {
+                            navigate(lastFreeToolsPage);
+                            return;
+                          }
+                          navigate(item.href);
+                        }}
+                        className={cn(
+                          buttonVariants({ variant: "ghost", size: "sm" }),
+                          "h-8 w-full rounded-lg text-xs transition-colors duration-200 relative overflow-visible",
+                          collapsed && !isMobileOpen
+                            ? "justify-center px-0"
+                            : "justify-start gap-2.5 px-2.5",
+                          active
+                            ? "!bg-transparent text-primary-foreground hover:!bg-transparent hover:text-primary-foreground"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                        )}
+                      >
+                        <item.icon className="h-5 w-5 shrink-0 relative z-10" />
+                        {(!collapsed || isMobileOpen) && (
+                          <span className="relative z-10">
+                            {t(item.titleKey)}
+                          </span>
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    {showTooltip && (
+                      <TooltipContent
+                        side="right"
+                        className="flex items-center gap-2"
+                      >
+                        <span>{t(item.titleKey)}</span>
+                      </TooltipContent>
+                    )}
+                  </SidebarTooltip>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+      </ScrollArea>
+
+      {/* Bottom Navigation */}
+      <div className="mt-auto p-1.5 electron-no-drag">
+        <nav className="flex flex-col gap-1">
+          {bottomNavItems.map((item) => {
+            const active = location.pathname === item.href;
+            const showTooltip = collapsed && !isMobileOpen && tooltipReady;
+            return (
+              <SidebarTooltip key={item.href} enabled={showTooltip}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => navigate(item.href)}
+                    className={cn(
+                      buttonVariants({ variant: "ghost", size: "sm" }),
+                      "h-8 w-full rounded-lg transition-all",
+                      collapsed && !isMobileOpen
+                        ? "justify-center px-0"
+                        : "justify-start gap-2.5 px-2.5",
+                      active
+                        ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/95 hover:text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <item.icon className="h-5 w-5 shrink-0" />
+                    {(!collapsed || isMobileOpen) && (
+                      <span>{t(item.titleKey)}</span>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                {showTooltip && (
+                  <TooltipContent side="right">
+                    {t(item.titleKey)}
+                  </TooltipContent>
+                )}
+              </SidebarTooltip>
+            );
+          })}
+        </nav>
+
+        {/* Collapse/expand: bottom button toggles; state also syncs to window width on resize */}
+        {!isMobileOpen && (
+          <SidebarTooltip enabled={collapsed && tooltipReady}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggle}
+                className={cn(
+                  "mt-3 h-8 w-full rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground",
+                  collapsed
+                    ? "justify-center px-0"
+                    : "justify-start gap-2.5 px-2.5",
+                )}
+              >
+                {collapsed ? (
+                  <PanelLeft className="h-5 w-5" />
+                ) : (
+                  <>
+                    <PanelLeftClose
+                      className="h-5 w-5"
+                      style={{ flexShrink: 0 }}
+                    />
+                    <span>{t("nav.collapse")}</span>
+                  </>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {t("nav.expand", "Expand")}
+            </TooltipContent>
+          </SidebarTooltip>
+        )}
+      </div>
+    </div>
+  );
+});

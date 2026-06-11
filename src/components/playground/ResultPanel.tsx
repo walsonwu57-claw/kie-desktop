@@ -1,0 +1,77 @@
+import type { ReactNode } from "react";
+import { OutputDisplay } from "./OutputDisplay";
+import { BatchOutputGrid } from "./BatchOutputGrid";
+import type { PredictionResult } from "@/types/prediction";
+import type { BatchResult, BatchQueueItem } from "@/types/batch";
+
+interface ResultPanelProps {
+  prediction: PredictionResult | null;
+  outputs: (string | Record<string, unknown>)[];
+  error: string | null;
+  isLoading: boolean;
+  modelId?: string;
+  // Batch
+  batchResults: BatchResult[];
+  batchEnabled?: boolean;
+  batchIsRunning?: boolean;
+  batchTotalCount?: number;
+  batchQueue?: BatchQueueItem[];
+  onClearBatch: () => void;
+  // Batch preview
+  batchPreviewInputs: Record<string, unknown>[];
+  // History
+  historyIndex: number | null;
+  historyLength?: number;
+  onNavigateHistory?: (direction: "prev" | "next") => void;
+  /** Content to show when idle/loading (replaces game) */
+  idleFallback?: ReactNode;
+}
+
+export function ResultPanel({
+  prediction,
+  outputs,
+  error,
+  isLoading,
+  modelId,
+  batchResults,
+  batchEnabled,
+  batchIsRunning,
+  batchTotalCount,
+  batchQueue,
+  onClearBatch,
+  historyIndex,
+  historyLength,
+  onNavigateHistory,
+  idleFallback,
+}: ResultPanelProps) {
+  // Show batch grid whenever batch mode is enabled (even before running)
+  const showBatchGrid =
+    (batchEnabled || batchResults.length > 0 || batchIsRunning) &&
+    historyIndex === null;
+
+  return (
+    <div className="flex-1 min-w-0 overflow-auto p-5 md:p-6 animate-in fade-in duration-200 fill-mode-both">
+      {showBatchGrid ? (
+        <BatchOutputGrid
+          results={batchResults}
+          modelId={modelId}
+          onClear={onClearBatch}
+          isRunning={batchIsRunning}
+          totalCount={batchTotalCount}
+          queue={batchQueue}
+        />
+      ) : (
+        <OutputDisplay
+          prediction={prediction}
+          outputs={outputs}
+          error={error}
+          isLoading={isLoading}
+          modelId={modelId}
+          historyLength={historyLength}
+          onNavigateHistory={onNavigateHistory}
+          idleFallback={idleFallback}
+        />
+      )}
+    </div>
+  );
+}

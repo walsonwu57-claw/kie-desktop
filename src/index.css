@@ -1,0 +1,595 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 65% 95%;
+    --accent-foreground: 217 91% 45%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+
+    /* Gradient colors - Blue to Cyan */
+    --gradient-start: 217 91% 60%;
+    --gradient-mid: 199 89% 48%;
+    --gradient-end: 186 94% 42%;
+
+    /* Sidebar text color */
+    --sidebar-text-color: #374151;
+    --sidebar-text-hover: #111827;
+
+    /* Content area */
+    --content-bg: 0 0% 100%;
+    --content-area: 220 10% 99.2%;
+    --panel-bg: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 0 0% 95%;
+    --card: 222 40% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 222 40% 10%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 217 91% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 30% 15%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 217 30% 15%;
+    --muted-foreground: 215 20% 60%;
+    --accent: 217 50% 18%;
+    --accent-foreground: 217 91% 75%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217 25% 16%;
+    --input: 217 30% 18%;
+    --ring: 217 91% 65%;
+
+    /* Gradient colors - Blue to Cyan */
+    --gradient-start: 217 91% 65%;
+    --gradient-mid: 199 89% 55%;
+    --gradient-end: 186 94% 50%;
+
+    /* Sidebar text color */
+    --sidebar-text-color: #e5e7eb;
+    --sidebar-text-hover: #ffffff;
+
+    /* Content area */
+    --content-bg: 222 47% 6%;
+    --content-area: 222 44% 8%;
+    --panel-bg: 222 40% 10%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
+}
+
+/* Electron custom title bar — make top toolbar draggable */
+.electron-drag {
+  -webkit-app-region: drag;
+}
+.electron-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Reserve space for Windows title bar overlay controls (minimize/maximize/close).
+   In Electron with titleBarOverlay, the native controls sit in the top-right corner.
+   macOS uses native traffic lights on the left, so no right margin needed. */
+.is-electron:not(.is-mac) .electron-safe-right {
+  padding-right: 140px;
+}
+
+/* Hide scrollbar but keep scroll functionality (for tab bars) */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Thin scrollbar variant */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 2px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.4);
+}
+
+/* Auto-hide scrollbar: invisible by default, visible on hover or scroll */
+.scrollbar-auto-hide::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.scrollbar-auto-hide:hover::-webkit-scrollbar-thumb,
+.scrollbar-auto-hide:active::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+}
+
+.scrollbar-auto-hide::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.45);
+}
+
+/* Gradient utilities */
+@layer utilities {
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      135deg,
+      hsl(var(--gradient-start)) 0%,
+      hsl(var(--gradient-mid)) 50%,
+      hsl(var(--gradient-end)) 100%
+    );
+  }
+
+  .gradient-bg {
+    background-image: linear-gradient(
+      135deg,
+      hsl(var(--gradient-start)) 0%,
+      hsl(var(--gradient-mid)) 50%,
+      hsl(var(--gradient-end)) 100%
+    );
+  }
+
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--gradient-start)) 0%,
+      hsl(var(--gradient-mid)) 50%,
+      hsl(var(--gradient-end)) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .glass {
+    @apply backdrop-blur-xl;
+    background: hsl(var(--background) / 0.8);
+  }
+
+  .glow {
+    box-shadow:
+      0 0 20px hsl(var(--primary) / 0.3),
+      0 0 40px hsl(var(--primary) / 0.1);
+  }
+
+  .glow-sm {
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.2);
+  }
+}
+
+/* Animated gradient background */
+@keyframes gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+/* Sidebar background with depth */
+.sidebar-bg {
+  background: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 100%) 100%);
+}
+
+.dark .sidebar-bg {
+  background: linear-gradient(180deg, hsl(222 45% 8%) 0%, hsl(222 45% 6%) 100%);
+}
+
+/* Content panel with elevation */
+.content-panel {
+  background: hsl(var(--panel-bg));
+  border-radius: var(--radius);
+  box-shadow:
+    0 1px 3px hsl(var(--foreground) / 0.05),
+    0 1px 2px hsl(var(--foreground) / 0.03);
+}
+
+.dark .content-panel {
+  box-shadow:
+    0 1px 3px hsl(0 0% 0% / 0.3),
+    0 1px 2px hsl(0 0% 0% / 0.2);
+}
+
+/* Elevated card with better shadow */
+.card-elevated {
+  box-shadow:
+    0 1px 3px hsl(var(--foreground) / 0.06),
+    0 4px 6px hsl(var(--foreground) / 0.04);
+  transition: all 0.2s ease;
+}
+
+.card-elevated:hover {
+  box-shadow:
+    0 4px 12px hsl(var(--foreground) / 0.08),
+    0 8px 16px hsl(var(--foreground) / 0.06);
+  transform: translateY(-2px);
+}
+
+.dark .card-elevated {
+  box-shadow:
+    0 1px 3px hsl(0 0% 0% / 0.4),
+    0 4px 6px hsl(0 0% 0% / 0.3);
+}
+
+.dark .card-elevated:hover {
+  box-shadow:
+    0 4px 12px hsl(0 0% 0% / 0.5),
+    0 8px 16px hsl(0 0% 0% / 0.4);
+}
+
+/* Page header with background */
+.page-header {
+  background: transparent;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+/* Abstract art animations */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+  }
+}
+
+@keyframes wave {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-400px);
+  }
+}
+
+@keyframes rotate-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes particle {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.2;
+  }
+  25% {
+    transform: translate(10px, -15px) scale(1.2);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate(20px, 5px) scale(0.8);
+    opacity: 0.3;
+  }
+  75% {
+    transform: translate(-5px, 10px) scale(1.1);
+    opacity: 0.5;
+  }
+}
+
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 10s ease-in-out infinite;
+  animation-delay: -3s;
+}
+
+.animate-float-slow {
+  animation: float 12s ease-in-out infinite;
+  animation-delay: -6s;
+}
+
+.animate-wave {
+  animation: wave 20s linear infinite;
+}
+
+.animate-wave-delayed {
+  animation: wave 25s linear infinite;
+  animation-delay: -5s;
+}
+
+.animate-wave-slow {
+  animation: wave 30s linear infinite;
+  animation-delay: -10s;
+}
+
+.animate-rotate-slow {
+  animation: rotate-slow 60s linear infinite;
+}
+
+.animate-rotate-reverse {
+  animation: rotate-slow 45s linear infinite reverse;
+}
+
+.animate-spin-slow {
+  animation: rotate-slow 30s linear infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 4s ease-in-out infinite;
+}
+
+.animate-particle {
+  animation: particle 8s ease-in-out infinite;
+}
+
+.animate-particle-delayed {
+  animation: particle 10s ease-in-out infinite;
+  animation-delay: -3s;
+}
+
+.animate-particle-slow {
+  animation: particle 12s ease-in-out infinite;
+  animation-delay: -6s;
+}
+
+/* Workflow node running pulse — visible glow breathe */
+@keyframes pulse-subtle {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 25px rgba(59, 130, 246, 0.5),
+      0 0 50px rgba(59, 130, 246, 0.15);
+  }
+}
+.animate-pulse-subtle {
+  animation: pulse-subtle 1.8s ease-in-out infinite;
+}
+
+/* Group drop-target breathe animation */
+@keyframes group-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.004);
+  }
+}
+.animate-group-breathe {
+  animation: group-breathe 0.8s ease-in-out infinite;
+}
+
+/* Carousel slide animations for results panel */
+@keyframes carousel-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes carousel-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ── Playground form field animations ── */
+
+/* Smooth grid collapse/expand */
+.grid-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.grid-collapse.open {
+  grid-template-rows: 1fr;
+}
+.grid-collapse > div {
+  overflow: hidden;
+}
+
+/* Field stagger fade-in */
+@keyframes field-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.field-animate {
+  animation: field-enter 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Shimmer sweep on hover */
+@keyframes shimmer-sweep {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--primary) / 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.btn-shimmer:hover::after {
+  opacity: 1;
+  animation: shimmer-sweep 1.2s ease-in-out;
+}
+
+/* Page enter transition — disabled for instant switching */
+
+/* Form field hover lift */
+.field-hover {
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  margin: -0.5rem;
+}
+.field-hover:hover {
+  background-color: hsl(var(--muted) / 0.3);
+  box-shadow: 0 1px 3px hsl(var(--foreground) / 0.04);
+}
+
+/* Settings page staggered card entrance */
+.settings-stagger > :is(.mt-6, [class*="Card"]):nth-child(2) {
+  animation: field-enter 0.3s cubic-bezier(0.4, 0, 0.2, 1) 50ms both;
+}
+.settings-stagger > :is(.mt-6, [class*="Card"]):nth-child(3) {
+  animation: field-enter 0.3s cubic-bezier(0.4, 0, 0.2, 1) 100ms both;
+}
+.settings-stagger > :is(.mt-6, [class*="Card"]):nth-child(4) {
+  animation: field-enter 0.3s cubic-bezier(0.4, 0, 0.2, 1) 150ms both;
+}
+.settings-stagger > :is(.mt-6, [class*="Card"]):nth-child(5) {
+  animation: field-enter 0.3s cubic-bezier(0.4, 0, 0.2, 1) 200ms both;
+}
+.settings-stagger > :is(.mt-6, [class*="Card"]):nth-child(n + 6) {
+  animation: field-enter 0.3s cubic-bezier(0.4, 0, 0.2, 1) 250ms both;
+}
+
+/* ── React Flow edge reconnection handles ─────────────────────────── */
+/* reconnectRadius = 6 (matches HANDLE_SIZE / 2).
+   EdgeAnchor cx is shifted by shiftX: source(Right) → +6, target(Left) → -6.
+   But getHandlePosition returns the edge of the handle box, not its center:
+     Right → x + width  (right edge)    handle center = sourceX - 6
+     Left  → x          (left edge)     handle center = targetX + 6
+   So EdgeAnchor cx ends up 12px away from handle center in both cases.
+   We translate back to center the circle on the handle dot. */
+.react-flow__edgeupdater {
+  cursor: move;
+  pointer-events: all;
+  fill: transparent;
+  stroke: transparent;
+  transition:
+    fill 150ms ease,
+    stroke 150ms ease,
+    r 150ms ease;
+}
+.react-flow__edgeupdater-source {
+  transform: translateX(-12px);
+}
+.react-flow__edgeupdater-target {
+  transform: translateX(12px);
+}
+.react-flow__edge:hover .react-flow__edgeupdater,
+.react-flow__edge.selected .react-flow__edgeupdater {
+  r: 24;
+  fill: hsl(var(--primary) / 0.2);
+  stroke: hsl(var(--primary) / 0.5);
+  stroke-width: 1.5;
+}
+.react-flow__edgeupdater:hover {
+  r: 28;
+  fill: hsl(var(--primary) / 0.35);
+  stroke: hsl(var(--primary));
+  stroke-width: 2;
+}

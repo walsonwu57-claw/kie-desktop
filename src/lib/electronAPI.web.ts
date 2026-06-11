@@ -1,0 +1,308 @@
+// Web mock implementation of electronAPI.
+// Provides Electron API-compatible interfaces in browser environments.
+
+import type { ElectronAPI, DownloadResult } from "@/types/electron";
+
+// Check whether we are running in a browser environment.
+const isBrowser = typeof window !== "undefined" && !window.electronAPI;
+
+// Use localStorage for API key persistence.
+const API_KEY_STORAGE_KEY = "kie_api_key";
+const SETTINGS_STORAGE_KEY = "kie_settings";
+const ASSETS_METADATA_STORAGE_KEY = "kie_assets_metadata";
+const ASSETS_SETTINGS_STORAGE_KEY = "kie_assets_settings";
+
+// Default settings.
+const DEFAULT_SETTINGS = {
+  theme: "system" as const,
+  defaultPollInterval: 2000,
+  defaultTimeout: 30000,
+  updateChannel: "stable" as const,
+  autoCheckUpdate: false,
+  language: "auto",
+};
+
+// Web implementation of electronAPI.
+export const electronAPIWeb: ElectronAPI = {
+  // API key management
+  getApiKey: async (): Promise<string> => {
+    return localStorage.getItem(API_KEY_STORAGE_KEY) || "";
+  },
+
+  setApiKey: async (apiKey: string): Promise<boolean> => {
+    try {
+      localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  saveFileSilent: async (): Promise<DownloadResult> => {
+    return { success: false };
+  },
+
+  updateTitlebarTheme: async (): Promise<void> => {},
+
+  // Settings management
+  getSettings: async () => {
+    try {
+      const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (stored) {
+        return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+      }
+    } catch {
+      // ignore
+    }
+    return DEFAULT_SETTINGS;
+  },
+
+  setSettings: async (settings: Record<string, unknown>): Promise<boolean> => {
+    try {
+      const current = await electronAPIWeb.getSettings();
+      localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify({ ...current, ...settings }),
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  clearAllData: async (): Promise<boolean> => {
+    try {
+      localStorage.removeItem(API_KEY_STORAGE_KEY);
+      localStorage.removeItem(SETTINGS_STORAGE_KEY);
+      localStorage.removeItem(ASSETS_METADATA_STORAGE_KEY);
+      localStorage.removeItem(ASSETS_SETTINGS_STORAGE_KEY);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  // File download (browser-based)
+  downloadFile: async (url: string, defaultFilename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = defaultFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(downloadUrl);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  },
+
+  openExternal: async (url: string): Promise<void> => {
+    window.open(url, "_blank", "noopener,noreferrer");
+  },
+
+  // App information
+  getAppVersion: async (): Promise<string> => {
+    return "1.0.0-web";
+  },
+
+  getLogFilePath: async (): Promise<string> => {
+    return "";
+  },
+
+  openLogDirectory: async () => {
+    return { success: false, path: "" };
+  },
+
+  // Update-related APIs (not supported in web version)
+  checkForUpdates: async () => {
+    return {
+      status: "not-available",
+      message: "Updates are not available in web version",
+    };
+  },
+
+  downloadUpdate: async () => {
+    return {
+      status: "not-available",
+      message: "Updates are not available in web version",
+    };
+  },
+
+  installUpdate: (): void => {
+    // no-op
+  },
+
+  setUpdateChannel: async (): Promise<boolean> => {
+    return false;
+  },
+
+  onUpdateStatus: () => {
+    return () => {
+      // no-op
+    };
+  },
+
+  // Asset management (using IndexedDB or localStorage)
+  getAssetsSettings: async () => {
+    try {
+      const stored = localStorage.getItem(ASSETS_SETTINGS_STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch {
+      // ignore
+    }
+    return {
+      autoSaveAssets: false,
+      assetsDirectory: "",
+    };
+  },
+
+  setAssetsSettings: async (
+    settings: Partial<{ autoSaveAssets: boolean; assetsDirectory: string }>,
+  ): Promise<boolean> => {
+    try {
+      const current = await electronAPIWeb.getAssetsSettings();
+      localStorage.setItem(
+        ASSETS_SETTINGS_STORAGE_KEY,
+        JSON.stringify({ ...current, ...settings }),
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  getDefaultAssetsDirectory: async (): Promise<string> => {
+    return "";
+  },
+
+  selectDirectory: async () => {
+    return {
+      success: false,
+      canceled: true,
+      error: "Directory selection not available in web version",
+    };
+  },
+
+  saveAsset: async () => {
+    return {
+      success: false,
+      error: "Asset saving not available in web version",
+    };
+  },
+
+  deleteAsset: async () => {
+    return {
+      success: false,
+      error: "Asset deletion not available in web version",
+    };
+  },
+
+  deleteAssetsBulk: async () => {
+    return { success: false, deleted: 0 };
+  },
+
+  getAssetsMetadata: async () => {
+    try {
+      const stored = localStorage.getItem(ASSETS_METADATA_STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch {
+      // ignore
+    }
+    return [];
+  },
+
+  saveAssetsMetadata: async (metadata: unknown[]): Promise<boolean> => {
+    try {
+      localStorage.setItem(
+        ASSETS_METADATA_STORAGE_KEY,
+        JSON.stringify(metadata),
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  openFileLocation: async () => {
+    return {
+      success: false,
+      error: "File location not available in web version",
+    };
+  },
+
+  checkFileExists: async (): Promise<boolean> => {
+    return false;
+  },
+
+  openAssetsFolder: async () => {
+    return {
+      success: false,
+      error: "Assets folder not available in web version",
+    };
+  },
+
+  scanAssetsDirectory: async () => {
+    return [];
+  },
+
+  getFileSize: async (): Promise<number> => {
+    return 0;
+  },
+
+  // Persistent key-value state (localStorage in web — same keys as persistentStorage)
+  getState: async (key: string): Promise<unknown> => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  },
+  setState: async (key: string, value: unknown): Promise<boolean> => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  removeState: async (key: string): Promise<boolean> => {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  // Assets event listener (no-op in web — browser-side saves directly to store)
+  onAssetsNewAsset: () => {
+    return () => {
+      /* no-op */
+    };
+  },
+
+  // Prediction inputs listener (no-op in web — browser-side saves directly to store)
+  onSavePredictionInputs: () => {
+    return () => {
+      /* no-op */
+    };
+  },
+};
+
+// Inject electronAPI when running in a browser environment.
+if (isBrowser) {
+  (window as Window & { electronAPI: ElectronAPI }).electronAPI =
+    electronAPIWeb;
+  // Set document title for web version (Desktop keeps "Kie Desktop" from index.html)
+  document.title = "Kie Studio";
+}
