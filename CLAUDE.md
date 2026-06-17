@@ -29,12 +29,32 @@ Kept from upstream: Playground (multi-tab, batch mode), Models browser, Template
 - One docs page can declare multiple model ids (enum) → one registry entry each.
 - No model thumbnails (kie docs have none) — except 2 hand-placed posters in `public/model-thumbs/` for the Featured panel.
 
+## Android App (mobile/)
+
+`mobile/` is a semi-standalone Capacitor sub-project that reuses the desktop `src/` via Vite aliases (`@` → `../src`, `@mobile` → `mobile/src`). It is a **trimmed build: Playground + Models + Settings only** (no free tools, no history/assets/templates pages).
+
+- appId `android.imwalson.kie`, appName "Kie Ai" (`mobile/capacitor.config.ts`).
+- Shares the same `KieClient` and bundled registry — and kie's API is CORS-permissive (echoes the `https://localhost` webview origin), so API calls work directly from the Android webview.
+- Mobile-specific files: `mobile/src/App.tsx` (3 routes), `components/layout/{MobileLayout,MobileHeader,BottomNavigation}`, `pages/{MobileModelsPage,MobilePlaygroundPage,SettingsPage}` (SettingsPage is a minimal override aliased over the desktop one), `platform/index.ts` (Capacitor bridge: Filesystem asset save, CapacitorHttp download to bypass CORS, Share/Camera), `stores/predictionInputsStore.ts`.
+- localStorage/asset keys rebranded to `kie_*` / `Documents/KieAi`.
+- Build deps trimmed: no onnxruntime/transformers/ffmpeg/upscaler (those were free-tool only).
+
+Build commands (run inside `mobile/`):
+```bash
+npm install
+npm run build                 # vite web build → dist/
+npx cap add android           # one-time: generate android/ native project
+npm run android:build:debug   # build + sync + gradlew assembleDebug → app-debug.apk
+```
+Requires JDK 17 + Android SDK. `android/local.properties` (`sdk.dir=...`) is gitignored — created per machine. Native build outputs (`android/app/build/`, `.gradle/`) are gitignored; the `android/` source (Gradle scripts, manifest) is committed.
+
 ## Development Commands
 
 ```bash
-npm run dev             # Electron + Vite dev
-npx vite                # Web-only dev server
+npm run dev             # Electron + Vite dev (desktop)
+npx vite                # Web-only dev server (desktop)
 npm run build:mac:fast  # Unsigned mac build
+cd mobile && npm run dev  # Mobile web dev server (test in browser at mobile viewport)
 ```
 
 API key for testing in `.env` (`API_KEY=...`) — gitignored, never commit. The key is entered in-app via Settings (`kie.ai/api-key`).

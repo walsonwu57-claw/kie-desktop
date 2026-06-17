@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kie Ai</string>
+    <string name="title_activity_main">Kie Ai</string>
+    <string name="package_name">android.imwalson.kie</string>
+    <string name="custom_url_scheme">android.imwalson.kie</string>
+</resources>
