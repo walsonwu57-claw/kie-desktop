@@ -171,16 +171,23 @@ export function WelcomePage() {
           },
         ]
       : []),
-    {
-      icon: <Wand2 className="h-6 w-6 text-orange-600 dark:text-orange-400" />,
-      title: t("welcome.features.freeTools.title"),
-      description: t("welcome.features.freeTools.description"),
-      gradient:
-        "bg-gradient-to-br from-orange-500/40 via-amber-500/20 to-transparent",
-      shapeGradient: "from-orange-500/40 to-amber-500/30",
-      href: "/free-tools",
-      badge: t("welcome.features.freeTools.badge"),
-    },
+    // Free Tools: hidden on mobile (mobile build ships no free tools)
+    ...(!isMobile
+      ? [
+          {
+            icon: (
+              <Wand2 className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+            ),
+            title: t("welcome.features.freeTools.title"),
+            description: t("welcome.features.freeTools.description"),
+            gradient:
+              "bg-gradient-to-br from-orange-500/40 via-amber-500/20 to-transparent",
+            shapeGradient: "from-orange-500/40 to-amber-500/30",
+            href: "/free-tools",
+            badge: t("welcome.features.freeTools.badge"),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -232,15 +239,17 @@ export function WelcomePage() {
             {t("welcome.getStarted")}
             <ArrowRight className="h-4 w-4" />
           </Button>
-          <Button
-            size="default"
-            variant="outline"
-            onClick={() => navigate("/free-tools")}
-            className="gap-2"
-          >
-            <Wand2 className="h-4 w-4" />
-            {t("welcome.tryFreeTools")}
-          </Button>
+          {!isMobile && (
+            <Button
+              size="default"
+              variant="outline"
+              onClick={() => navigate("/free-tools")}
+              className="gap-2"
+            >
+              <Wand2 className="h-4 w-4" />
+              {t("welcome.tryFreeTools")}
+            </Button>
+          )}
         </div>
       </div>
 

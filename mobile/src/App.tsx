@@ -5,6 +5,8 @@ import { WelcomePage } from "@/pages/WelcomePage";
 import { SmartPlaygroundPage } from "@/pages/SmartPlaygroundPage";
 import { MobileModelsPage } from "@mobile/pages/MobileModelsPage";
 import { MobilePlaygroundPage } from "@mobile/pages/MobilePlaygroundPage";
+import { MobileTemplatesPage } from "@mobile/pages/MobileTemplatesPage";
+import { MobileHistoryPage } from "@mobile/pages/MobileHistoryPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { useApiKeyStore } from "@/stores/apiKeyStore";
 import { useModelsStore } from "@/stores/modelsStore";
@@ -37,6 +39,8 @@ function App() {
         <Route path="models" element={<MobileModelsPage />} />
         <Route path="playground" element={<MobilePlaygroundPage />} />
         <Route path="playground/*" element={<MobilePlaygroundPage />} />
+        <Route path="templates" element={<MobileTemplatesPage />} />
+        <Route path="history" element={<MobileHistoryPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>

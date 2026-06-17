@@ -12,7 +12,7 @@ export function MobileLayout() {
   const { isLoading: isLoadingApiKey, isValidated } = useApiKeyStore();
 
   // Pages that don't require an API key
-  const publicPaths = ["/", "/settings"];
+  const publicPaths = ["/", "/settings", "/templates"];
   const isPublicPage = publicPaths.some(
     (path) =>
       location.pathname === path || location.pathname.startsWith(path + "/"),

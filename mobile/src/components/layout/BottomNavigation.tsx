@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Box, Sparkles, Settings } from "lucide-react";
+import { Box, Sparkles, FileText, History, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -18,11 +18,13 @@ const navItems: NavItem[] = [
     icon: Sparkles,
     matchPaths: ["/playground"],
   },
+  { path: "/history", labelKey: "nav.history", icon: History },
+  { path: "/templates", labelKey: "nav.templates", icon: FileText },
   { path: "/settings", labelKey: "nav.settings", icon: Settings },
 ];
 
 // Paths that work without an API key
-const publicNavPaths = ["/settings"];
+const publicNavPaths = ["/settings", "/templates"];
 
 interface BottomNavigationProps {
   isValidated?: boolean;
@@ -77,9 +79,7 @@ export function BottomNavigation({
               <span
                 className={cn(
                   "text-[10px]",
-                  active
-                    ? "text-primary font-medium"
-                    : "text-muted-foreground",
+                  active ? "text-primary font-medium" : "text-muted-foreground",
                 )}
               >
                 {t(item.labelKey)}
