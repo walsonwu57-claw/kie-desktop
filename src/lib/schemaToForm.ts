@@ -90,35 +90,40 @@ export function validateFormValues(
   return errors;
 }
 
-// Detect file input type based on field name patterns
+// Field-name fragments that carry a media word but are NOT file inputs
+// (numbers, enums, flags, ids). Guards against e.g. image_size, num_images,
+// image_resolution, output_format, audio_setting, image_prompt_strength.
+const MEDIA_EXCLUDE_RE =
+  /(size|resolution|format|quality|level|setting|_id$|_ids$|type|mode|strength|scale|ratio|count|num|weight|fps|duration|steps|seconds|prompt)/;
+
+/**
+ * Detect the media kind of a file-input field from its name.
+ * Recognizes image/img/photo/picture/frame/mask, video, audio/voice/music.
+ * Returns the accept string, or null if it is not a media/file field.
+ * File-vs-array is decided by the caller from the schema type.
+ */
+function detectFileAccept(name: string): string | null {
+  const n = name.trim().toLowerCase();
+  if (MEDIA_EXCLUDE_RE.test(n)) return null;
+  if (/video/.test(n)) return "video/*";
+  if (/audio|voice|music/.test(n)) return "audio/*";
+  if (/image|img|photo|picture|frame|mask|portrait|face/.test(n)) {
+    return "image/*";
+  }
+  return null;
+}
+
+// Backwards-compatible helper: returns accept + a best-guess file/array type
+// from the name's plurality (callers that know the schema type override it).
 function detectFileType(
   name: string,
 ): { accept: string; type: "file" | "file-array" } | null {
-  const lowerName = name.toLowerCase();
-
-  // Check for plural forms (arrays)
-  if (lowerName.endsWith("images") || lowerName.endsWith("image_urls")) {
-    return { accept: "image/*", type: "file-array" };
-  }
-  if (lowerName.endsWith("videos") || lowerName.endsWith("video_urls")) {
-    return { accept: "video/*", type: "file-array" };
-  }
-  if (lowerName.endsWith("audios") || lowerName.endsWith("audio_urls")) {
-    return { accept: "audio/*", type: "file-array" };
-  }
-
-  // Check for singular patterns (matches *image, *video, *audio)
-  if (lowerName.endsWith("image") || lowerName.endsWith("image_url")) {
-    return { accept: "image/*", type: "file" };
-  }
-  if (lowerName.endsWith("video") || lowerName.endsWith("video_url")) {
-    return { accept: "video/*", type: "file" };
-  }
-  if (lowerName.endsWith("audio") || lowerName.endsWith("audio_url")) {
-    return { accept: "audio/*", type: "file" };
-  }
-
-  return null;
+  const accept = detectFileAccept(name);
+  if (!accept) return null;
+  const n = name.trim().toLowerCase();
+  const isArray =
+    /(urls|images|videos|audios|frames|photos|pictures|list)$/.test(n);
+  return { accept, type: isArray ? "file-array" : "file" };
 }
 
 // Fields that should use textarea
@@ -209,15 +214,16 @@ function propertyToField(
     };
   }
 
-  // Check if this is a file input field (string type with matching name pattern)
-  if (prop.type === "string") {
-    const filePattern = detectFileType(name);
-    if (filePattern) {
+  // File input as a single URL string (name-based). Skip enum selects
+  // (e.g. image_size) — those are handled by the select branch below.
+  if (prop.type === "string" && !prop.enum) {
+    const accept = detectFileAccept(name);
+    if (accept) {
       return {
         ...baseField,
-        type: filePattern.type,
-        accept: filePattern.accept,
-        maxFiles: prop.maxItems || (filePattern.type === "file-array" ? 10 : 1),
+        type: "file",
+        accept,
+        maxFiles: 1,
       };
     }
   }
@@ -266,16 +272,12 @@ function propertyToField(
 
   // Handle array type (could be file array)
   if (prop.type === "array") {
-    const lowerName = name.toLowerCase();
-    // Check if it's an array of strings that looks like URLs/files
-    if (
-      lowerName.includes("image") ||
-      lowerName.includes("video") ||
-      lowerName.includes("audio")
-    ) {
-      let accept = "image/*";
-      if (lowerName.includes("video")) accept = "video/*";
-      else if (lowerName.includes("audio")) accept = "audio/*";
+    // Array of image/video/audio URLs → multi-file uploader.
+    // The uploader supports both file upload and direct URL entry.
+    // Guard: only for arrays of URL strings, not arrays of objects.
+    const accept =
+      prop.items?.type !== "object" ? detectFileAccept(name) : null;
+    if (accept) {
       return {
         ...baseField,
         type: "file-array",
