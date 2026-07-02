@@ -110,3 +110,6 @@ mobile/android/.idea/
 mobile/android/*.iml
 mobile/dist/
 __testkey.txt
+
+# Built APKs (binary artifacts)
+*.apk
